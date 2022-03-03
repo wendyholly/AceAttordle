@@ -3,38 +3,20 @@ from replit import db
 
 def wordlist():
   return [
-    "ALITA","AMANO","ANGEL","APRIL",
-    "ASOGI","ATMEY","AUCHI",
-    "BADGE","BAROK","BASIL","BENCH","BERRY",
-    "BLOOD","BLUFF","BYRDE","BYRNE",
-    "CAMMY","CASES","CHIEF","CINDY",
-    "COURT","CRIME","CYKES",
-    "DAMON","DARKE","DEATH","DIEGO",
-    "ELISE","ENOCH","FILCH","FRANK","FURIO",
-    "GAVEL","GAVIN","GLASS",
-    "GODOT","GOURD","GRAPE","GUILT",
-    "HOTTI","INPAX","JUDGE","JUNIE","JUROR",
-    "LANCE","LARRY","LEGAL",
-    "LOCKS","LOGIC","LOTTA","LUNCH",
-    "KARMA","KLINT","KNIFE",
-    "MACHI","MAGIC","MANNY","MASON",
-    "MEANS","METIS",
-    "MILES","MINEY","MISTY",
-    "PAYNE","PEARL","PENNY",
-    "PHOTO","PIANO","POLLY","PONCO","PRINT",
-    "RHODA","ROBIN",
-    "SCENE","SHADI","SHOOT","SIMON","SITHE",
-    "SORIN","SPARK","SPEAR",
-    "STAGE","STAND","STARR","STEEL",
-    "TENMA","TERRY","THENA","THIEF",
-    "TIALA","TIGRE","TRIAL","TRUCY",
-    "UNCLE","VIGIL","VIOLA",
-    "WENDY","WOCKY","WOODS","YANNI","YUJIN"
+    "BEARD","SHOUT","CLINK"
   ]
 
 def reset():
   word=random.choice(wordlist())
-  db["aceattordle"]=[word,0]
+
+  letterAry = [0 for i in range(26)]
+  letterStr="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  for i in range(5):
+    charIndex = letterStr.find(word[i])
+    letterAry[charIndex] = letterAry[charIndex]+1
+    
+  db["aceattordle"]=[word,letterAry]
+  db["aceattordleguesses"]=0
   return word
 
 def processGuess(guess):
@@ -46,32 +28,56 @@ def processGuess(guess):
   if "aceattordle" in db.keys():
     word = db["aceattordle"][0]
   else:
-    word=reset()
+    word = reset()
 
-  solved=1
-  msg=""
+  solved = 1
+  msg = ""
+
+  resultAry = [0 for i in range(5)]
+  guessLetterAry = [0 for i in range(26)]
+  letterAry = db["aceattordle"][1]
+  letterStr="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  
+  for i in range(5): #this loop handles perfect matches first
+    if guess[i]==word[i]: 
+      resultAry[i] = 2
+      guessLetterAry = incrementChar(guess[i],guessLetterAry)
+      
+  for i in range(5): #now look for yellow
+    if guess[i]==word[i]: continue #green letters already handled
+
+    #if we've already found all instances of a letter
+    charIndex = letterStr.find(guess[i])
+    if guessLetterAry[charIndex]>=letterAry[charIndex]: continue 
+      
+    if guess[i] in word:
+      resultAry[i] = 1
+      guessLetterAry = incrementChar(guess[i],guessLetterAry)
+
   for i in range(5):
-    if guess[i]==word[i]: msg=msg+":green_square:"
-    elif guess[i] in word: 
-      msg=msg+":yellow_square:"
-      solved=0
+    if resultAry[i]==2: msg=msg+":green_square:"
+    elif resultAry[i]==1: 
+      msg = msg + ":yellow_square:"
+      solved = 0
     else: 
-      msg=msg+":black_large_square:"
-      solved=0
+      msg = msg+":black_large_square:"
+      solved = 0
 
-  guesses = db["aceattordle"][1]+1
+  guesses = db["aceattordleguesses"]+1
   if solved==1:
     msg = msg+"\nCongratulations!"
     msg = msg+"\nGuesses: "+ str(guesses)
     reset()
   else:
     msg = msg+"\nGuesses: "+ str(guesses)
-    db["aceattordle"]=[word,guesses]
+    db["aceattordleguesses"] = guesses
 
   #print(word,guesses)
 
   return msg
 
-  
-  
-  
+def incrementChar(letter,letterAry):
+  letterStr="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  charIndex = letterStr.find(letter)
+  letterAry[charIndex] = letterAry[charIndex]+1
+  return letterAry
